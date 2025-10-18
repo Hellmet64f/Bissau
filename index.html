@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="pt">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Explorar Guiné-Bissau</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Babel to transpile JSX in the browser -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Import Map for React modules -->
+    <script type="importmap">
+      {
+        "imports": {
+          "react": "https://esm.sh/react@18.2.0",
+          "react-dom/client": "https://esm.sh/react-dom@18.2.0/client"
+        }
+      }
+    </script>
+  </head>
+  <body class="bg-gray-100 antialiased">
+    <div id="root"></div>
+
+    <!-- The entire React application is contained within this script -->
+    <script type="text/babel" data-type="module">
+      import React, { useState, useEffect, useRef } from 'react';
+      import ReactDOM from 'react-dom/client';
+
+      // --- COMPONENTS ---
+
+      // --- InfoModal.tsx ---
+      const InfoModal = ({ isOpen, onClose, title, children }) => {
+        useEffect(() => {
+          const handleEsc = (event) => {
+            if (event.key === 'Escape') {
+              onClose();
+            }
+          };
+          if (isOpen) {
+            window.addEventListener('keydown', handleEsc);
+          }
+          return () => {
+            window.removeEventListener('keydown', handleEsc);
+          };
+        }, [isOpen, onClose]);
+
+        if (!isOpen) {
+          return null;
+        }
+
+        return (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 animate-fade-in"
+            onClick={onClose}
+          >
+            <div
+              className="bg-white rounded-lg shadow-2xl w-full max-w-lg overflow-hidden animate-scale-up"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center p-5 border-b border-gray-200">
+                <h2 className="text-2xl font-bold text-gray-800">{title}</h2>
+                <button
+                  onClick={onClose}
+                  className="text-gray-400 hover:text-gray-800 transition-colors"
+                  aria-label="Fechar modal"
+                >
+                  <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                  </svg>
+                </button>
+              </div>
+              <div className="p-6 max-h-[60vh] overflow-y-auto">
+                {children}
+              </div>
+              <div className="p-4 bg-gray-50 text-right">
+                  <button onClick={onClose} className="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50">
+                      Fechar
+                  </button>
+              </div>
+            </div>
+            <style>{`
+              @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+              @keyframes scale-up { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+              .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+              .animate-scale-up { animation: scale-up 0.3s cubic-bezier(0.165, 0.840, 0.440, 1.000) forwards; }
+            `}</style>
+          </div>
+        );
+      };
+
+      // --- SideMenu.tsx ---
+      const MenuItem = ({ icon, label, onClick }) => (
+        <li
+          onClick={onClick}
+          className="flex items-center space-x-4 p-4 rounded-lg cursor-pointer text-gray-300 hover:bg-gray-700 hover:text-white transition-all duration-200"
+        >
+          <div className="w-6 h-6">{icon}</div>
+          <span className="text-lg font-medium">{label}</span>
+        </li>
+      );
+
+      const SideMenu = ({ isOpen, onClose, onMenuItemClick }) => {
+        return (
+          <>
+            <div 
+              className={`fixed inset-0 bg-black/60 z-40 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+              onClick={onClose}
+            ></div>
+            <div
+              className={`fixed top-0 left-0 h-full w-72 bg-gray-800 text-white shadow-2xl transform transition-transform duration-300 ease-in-out z-50 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
+            >
+              <div className="flex items-center justify-between p-4 border-b border-gray-700">
+                <h2 className="text-xl font-bold">Menu</h2>
+                <button 
+                  onClick={onClose}
+                  className="p-2 rounded-full hover:bg-gray-700 transition-colors"
+                  aria-label="Fechar menu"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <nav className="p-4">
+                <ul className="space-y-2">
+                  <MenuItem 
+                    icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+                    label="Sobre o Projeto"
+                    onClick={() => onMenuItemClick('about')}
+                  />
+                  <MenuItem 
+                    icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M15 21a6 6 0 00-9-5.197m0 0A5.995 5.995 0 0012 12a5.995 5.995 0 00-3-5.197m0 0A5.995 5.995 0 0012 12a5.995 5.995 0 003 5.197M15 21a6 6 0 009-5.197" /></svg>}
+                    label="Créditos"
+                    onClick={() => onMenuItemClick('credits')}
+                  />
+                  <MenuItem 
+                    icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>}
+                    label="Definições"
+                    onClick={() => onMenuItemClick('settings')}
+                  />
+                </ul>
+              </nav>
+            </div>
+          </>
+        );
+      };
+
+      // --- WelcomeScreen.tsx ---
+      const WelcomeScreen = ({ onStart }) => {
+        const [isMenuOpen, setIsMenuOpen] = useState(false);
+        const [modalContent, setModalContent] = useState(null);
+
+        const handleMenuItemClick = (item) => {
+          setIsMenuOpen(false);
+          switch (item) {
+            case 'about':
+              setModalContent({
+                title: 'Sobre o Projeto',
+                content: (
+                  <div className="space-y-4 text-gray-600">
+                    <p>
+                      Este projeto é uma celebração digital da Guiné-Bissau, concebido para oferecer uma visão imersiva e educativa sobre a rica tapeçaria cultural, histórica e natural do país.
+                    </p>
+                    <p>
+                      Através de uma interface visualmente atraente e interativa, os utilizadores são convidados a explorar diversos tópicos, desde a vibrante cena musical à biodiversidade única do Arquipélago dos Bijagós. O objetivo é despertar a curiosidade e promover um maior apreço pela "pérola da África Ocidental".
+                    </p>
+                  </div>
+                ),
+              });
+              break;
+            case 'credits':
+              setModalContent({
+                title: 'Créditos',
+                content: (
+                  <div className="space-y-4 text-gray-600">
+                    <p>Este projeto foi desenvolvido com paixão e as seguintes tecnologias:</p>
+                    <ul className="list-disc list-inside space-y-2">
+                      <li><strong>Design e Desenvolvimento:</strong> Miguel.</li>
+                      <li><strong>Framework:</strong> React com TypeScript.</li>
+                      <li><strong>Estilização:</strong> Tailwind CSS.</li>
+                      <li><strong>Fotografias:</strong> Unsplash, Pexels e Wikimedia Commons.</li>
+                      <li>
+                        <strong>Mapa 3D:</strong> <a href="https://earth3dmap.com/" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline">earth3dmap.com</a>
+                      </li>
+                      <li><strong>Inspiração:</strong> O povo e a cultura da Guiné-Bissau.</li>
+                    </ul>
+                  </div>
+                ),
+              });
+              break;
+            case 'settings':
+              setModalContent({
+                title: 'Definições',
+                content: (
+                  <div className="space-y-4 text-gray-600">
+                    <p>Atualmente, não existem definições personalizáveis disponíveis. Estamos a trabalhar para adicionar novas funcionalidades no futuro, como a seleção de idioma e preferências de tema.</p>
+                    <p>Volte a verificar mais tarde!</p>
+                  </div>
+                ),
+              });
+              break;
+            default:
+              break;
+          }
+        };
+
+
+        return (
+          <>
+            <div className="h-screen w-screen bg-gray-900 text-white flex flex-col items-center justify-center relative overflow-hidden">
+              <div 
+                  className="absolute inset-0 bg-cover bg-center animate-ken-burns" 
+                  style={{ backgroundImage: "url('https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Flag_of_Guinea-Bissau.svg/1920px-Flag_of_Guinea-Bissau.svg.png')" }}>
+              </div>
+              <div className="absolute inset-0 bg-black bg-opacity-50"></div>
+              
+              <div className="relative z-10 text-center flex flex-col items-center p-4 animate-float">
+                <div className="animate-fade-in-down" style={{ animationDelay: '200ms' }}>
+                  <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-4" style={{ textShadow: '0 4px 15px rgba(0,0,0,0.5)' }}>
+                    Guiné-Bissau
+                  </h1>
+                </div>
+                <div className="animate-fade-in-down" style={{ animationDelay: '500ms' }}>
+                  <p className="text-xl md:text-2xl mb-12 max-w-2xl" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.7)' }}>
+                    Uma jornada interativa pela pérola da África Ocidental. Descubra sua cultura, história e belezas naturais.
+                  </p>
+                </div>
+                <div className="animate-scale-up" style={{ animationDelay: '800ms' }}>
+                  <button
+                    onClick={onStart}
+                    className="bg-green-600 hover:bg-green-500 text-white font-bold text-2xl py-4 px-12 rounded-full shadow-lg hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-green-400 focus:ring-opacity-50 animate-pulse"
+                  >
+                    Explorar Agora
+                  </button>
+                </div>
+              </div>
+
+              <div className="absolute bottom-8 left-8 z-10 opacity-0 animate-fade-in" style={{ animationDelay: '1200ms' }}>
+                <button 
+                  onClick={() => setIsMenuOpen(true)}
+                  className="p-3 rounded-full bg-black/30 hover:bg-black/50 transition-colors focus:outline-none focus:ring-2 focus:ring-white/50"
+                  aria-label="Abrir menu"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                </button>
+              </div>
+
+              <style>{`
+                @keyframes fade-in-down { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+                @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes scale-up { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+                @keyframes ken-burns { 0% { transform: scale(1) translate(0, 0); } 100% { transform: scale(1.1) translate(-2%, 1%); } }
+                @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
+                @keyframes pulse { 0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(4, 120, 87, 0.7); } 50% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(4, 120, 87, 0); } }
+                .animate-fade-in-down { animation: fade-in-down 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; opacity: 0; }
+                .animate-fade-in { animation: fade-in 1s ease-out forwards; opacity: 0; }
+                .animate-scale-up { animation: scale-up 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; opacity: 0; }
+                .animate-ken-burns { animation: ken-burns 15s ease-out infinite alternate forwards; }
+                .animate-float { animation: float 8s ease-in-out 1s infinite; }
+                .animate-pulse { animation-name: pulse, scale-up; animation-duration: 2s, 0.7s; animation-timing-function: ease-in-out, cubic-bezier(0.175, 0.885, 0.32, 1.275); animation-delay: 1.5s, 800ms; animation-iteration-count: infinite, 1; animation-fill-mode: forwards; opacity: 0; }
+              `}</style>
+            </div>
+            <SideMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} onMenuItemClick={handleMenuItemClick} />
+            {modalContent && (
+              <InfoModal
+                isOpen={!!modalContent}
+                onClose={() => setModalContent(null)}
+                title={modalContent.title}
+              >
+                {modalContent.content}
+              </InfoModal>
+            )}
+          </>
+        );
+      };
+
+      // --- TopicCard.tsx ---
+      const TopicCard = ({ topic, onClick, animationDelay }) => {
+        return (
+          <div
+            className="bg-white rounded-xl shadow-md hover:shadow-2xl transition-shadow duration-300 overflow-hidden cursor-pointer group relative animate-card-enter"
+            onClick={onClick}
+            style={{ animationDelay }}
+          >
+            <div className="absolute top-0 left-[-100%] h-full w-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full z-10"></div>
+            
+            <div className="transform transition-transform duration-500 ease-out group-hover:scale-105">
+              <div className="relative h-56 overflow-hidden">
+                <img className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-110" src={topic.imageUrl} alt={topic.title} />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                <span className="absolute top-3 right-3 bg-green-600 text-white text-xs font-bold px-3 py-1.5 rounded-full transform transition-all duration-300 group-hover:scale-110 group-hover:bg-green-500 shadow-md z-20">{topic.category}</span>
+              </div>
+              <div className="p-6">
+                <h3 className="text-2xl font-bold text-gray-800 mb-2">{topic.title}</h3>
+                <p className="text-gray-600 leading-relaxed">{topic.shortDescription}</p>
+                <div className="mt-4 text-green-700 font-bold group-hover:text-green-600 flex items-center transition-colors duration-300">
+                  <span className="inline-block transition-transform duration-300 ease-in-out group-hover:translate-x-2">
+                    Saber mais &rarr;
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      // --- TopicModal.tsx ---
+      const TopicModal = ({ topic, onClose, isClosing }) => {
+        const chartContainerRef = useRef(null);
+        const [xofAmount, setXofAmount] = useState('');
+        const [usdAmount, setUsdAmount] = useState('');
+        const [brlAmount, setBrlAmount] = useState('');
+        const [activeTab, setActiveTab] = useState('about');
+
+        const XOF_TO_USD_RATE = 615;
+        const BRL_TO_USD_RATE = 5.4;
+
+        const handleXofChange = (e) => {
+          const value = e.target.value;
+          setXofAmount(value);
+          if (value && !isNaN(parseFloat(value))) {
+            const xofValue = parseFloat(value);
+            const usdValue = xofValue / XOF_TO_USD_RATE;
+            const brlValue = usdValue * BRL_TO_USD_RATE;
+            setUsdAmount(usdValue.toFixed(2));
+            setBrlAmount(brlValue.toFixed(2));
+          } else {
+            setUsdAmount('');
+            setBrlAmount('');
+          }
+        };
+
+        const handleUsdChange = (e) => {
+          const value = e.target.value;
+          setUsdAmount(value);
+          if (value && !isNaN(parseFloat(value))) {
+            const usdValue = parseFloat(value);
+            const xofValue = usdValue * XOF_TO_USD_RATE;
+            const brlValue = usdValue * BRL_TO_USD_RATE;
+            setXofAmount(xofValue.toFixed(0));
+            setBrlAmount(brlValue.toFixed(2));
+          } else {
+            setXofAmount('');
+            setBrlAmount('');
+          }
+        };
+        
+        const handleBrlChange = (e) => {
+          const value = e.target.value;
+          setBrlAmount(value);
+          if (value && !isNaN(parseFloat(value))) {
+            const brlValue = parseFloat(value);
+            const usdValue = brlValue / BRL_TO_USD_RATE;
+            const xofValue = usdValue * XOF_TO_USD_RATE;
+            setUsdAmount(usdValue.toFixed(2));
+            setXofAmount(xofValue.toFixed(0));
+          } else {
+            setUsdAmount('');
+            setXofAmount('');
+          }
+        };
+
+        useEffect(() => {
+          const handleEsc = (event) => {
+            if (event.key === 'Escape') {
+              onClose();
+            }
+          };
+          window.addEventListener('keydown', handleEsc);
+
+          if (topic.id === 'currency' && activeTab === 'chart' && chartContainerRef.current) {
+            if (chartContainerRef.current.querySelector('iframe')) {
+              return;
+            }
+            
+            const script = document.createElement('script');
+            script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js';
+            script.async = true;
+            script.innerHTML = JSON.stringify({
+              "symbol": "FX_IDC:XOFUSD",
+              "width": "100%", "height": "100%", "locale": "pt", "dateRange": "12M",
+              "colorTheme": "light", "isTransparent": true, "autosize": true, "largeChartUrl": ""
+            });
+            chartContainerRef.current.appendChild(script);
+          }
+
+          return () => {
+            window.removeEventListener('keydown', handleEsc);
+          };
+        }, [onClose, topic.id, activeTab]);
+
+        const backdropAnimation = isClosing ? 'animate-fade-out' : 'animate-fade-in';
+        const modalAnimation = isClosing ? 'animate-scale-down' : 'animate-scale-up';
+
+        const tabs = [
+          { id: 'about', label: 'Sobre' },
+          { id: 'converter', label: 'Conversor' },
+          { id: 'power', label: 'Poder de Compra' },
+          { id: 'salary', label: 'Salário' },
+          { id: 'chart', label: 'Cotação' },
+        ];
+        
+        if (topic.id === 'bissau-map') {
+          return (
+            <div
+              className={`fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4 ${backdropAnimation}`}
+              onClick={onClose}
+            >
+              <div
+                className={`bg-white rounded-xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col ${modalAnimation}`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                  <div className="animate-content-in">
+                    <h2 className="text-2xl font-bold text-gray-900">{topic.title}</h2>
+                    <p className="text-sm text-gray-600">{topic.shortDescription}</p>
+                  </div>
+                  <button onClick={onClose} className="text-gray-400 hover:text-gray-800 transition-colors z-10" aria-label="Fechar modal">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                  </button>
+                </div>
+                <div className="flex-grow flex flex-col overflow-y-auto">
+                  <div className="h-3/5 w-full bg-gray-200">
+                    <iframe src="https://maps.google.com/maps?q=Bissau&t=k&z=14&ie=UTF8&iwloc=&output=embed" width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy" title="Mapa 3D de Bissau"></iframe>
+                  </div>
+                  <div className="p-6">
+                      <div className="prose max-w-none text-gray-700 animate-content-in" style={{ animationDelay: '200ms' }}>
+                          <p className="text-lg leading-relaxed">{topic.longDescription}</p>
+                      </div>
+                  </div>
+                </div>
+              </div>
+              <style>{`
+                @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } } @keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
+                @keyframes scale-up { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+                @keyframes scale-down { from { transform: scale(1); opacity: 1; } to { transform: scale(0.95); opacity: 0; } }
+                @keyframes content-in { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+                .animate-fade-in { animation: fade-in 0.3s ease-out forwards; } .animate-fade-out { animation: fade-out 0.3s ease-in forwards; }
+                .animate-scale-up { animation: scale-up 0.4s cubic-bezier(0.165, 0.840, 0.440, 1.000) forwards; }
+                .animate-scale-down { animation: scale-down 0.3s ease-in forwards; }
+                .animate-content-in { animation: content-in 0.5s cubic-bezier(0.165, 0.840, 0.440, 1.000) forwards; opacity: 0; }
+              `}</style>
+            </div>
+          );
+        }
+
+        const renderTabContent = () => {
+          switch (activeTab) {
+            case 'about':
+              return (
+                <div className="animate-fade-in-content">
+                  <h3 className="text-xl font-bold text-gray-800 mb-2">Sobre o Franco CFA</h3>
+                  <p className="text-gray-700 leading-relaxed">{topic.longDescription}</p>
+                </div>
+              );
+            case 'converter':
+              return (
+                <div className="animate-fade-in-content">
+                  <h3 className="text-xl font-bold text-gray-800 mb-4">Conversor Rápido</h3>
+                  <div className="space-y-6">
+                    <div className="relative p-4 bg-green-50 border-2 border-green-200 rounded-lg transition-all duration-300 focus-within:ring-2 focus-within:ring-green-400 focus-within:border-green-400">
+                      <label htmlFor="xof" className="absolute -top-3 left-3 inline-block bg-green-50 px-1 text-sm font-semibold text-green-800"><span className="mr-1" role="img" aria-label="Bandeira da Guiné-Bissau">🇬🇼</span>Franco CFA</label>
+                      <div className="flex items-baseline"><span className="text-lg font-medium text-gray-500 mr-2">XOF</span><input type="number" name="xof" id="xof" value={xofAmount} onChange={handleXofChange} className="w-full bg-transparent text-3xl font-bold text-gray-800 border-none focus:outline-none focus:ring-0 p-0" placeholder="10000" /></div>
+                    </div>
+                    <div className="relative p-4 bg-blue-50 border-2 border-blue-200 rounded-lg transition-all duration-300 focus-within:ring-2 focus-within:ring-blue-400 focus-within:border-blue-400">
+                      <label htmlFor="usd" className="absolute -top-3 left-3 inline-block bg-blue-50 px-1 text-sm font-semibold text-blue-800"><span className="mr-1" role="img" aria-label="Bandeira dos Estados Unidos">🇺🇸</span>Dólar</label>
+                      <div className="flex items-baseline"><span className="text-lg font-medium text-gray-500 mr-2">USD</span><input type="number" name="usd" id="usd" value={usdAmount} onChange={handleUsdChange} className="w-full bg-transparent text-3xl font-bold text-gray-800 border-none focus:outline-none focus:ring-0 p-0" placeholder="16.26" /></div>
+                    </div>
+                    <div className="relative p-4 bg-amber-50 border-2 border-amber-200 rounded-lg transition-all duration-300 focus-within:ring-2 focus-within:ring-amber-400 focus-within:border-amber-400">
+                      <label htmlFor="brl" className="absolute -top-3 left-3 inline-block bg-amber-50 px-1 text-sm font-semibold text-amber-800"><span className="mr-1" role="img" aria-label="Bandeira do Brasil">🇧🇷</span>Real</label>
+                      <div className="flex items-baseline"><span className="text-lg font-medium text-gray-500 mr-2">BRL</span><input type="number" name="brl" id="brl" value={brlAmount} onChange={handleBrlChange} className="w-full bg-transparent text-3xl font-bold text-gray-800 border-none focus:outline-none focus:ring-0 p-0" placeholder="87.80" /></div>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-4 text-center">Taxas de conversão aproximadas. Use apenas para estimativa.</p>
+                </div>
+              );
+            case 'power':
+              return (
+                <div className="animate-fade-in-content">
+                    <h3 className="text-xl font-bold text-gray-800 mb-3">Poder de Compra (Exemplos)</h3>
+                    <p className="text-gray-600 mb-3">Para dar uma ideia do custo de vida, aqui ficam alguns valores aproximados:</p>
+                    <ul className="list-disc list-inside space-y-1 text-gray-700">
+                      <li><strong>Refeição local:</strong> 1.500 - 3.000 XOF</li>
+                      <li><strong>Garrafa de água (1.5L):</strong> 500 XOF</li>
+                      <li><strong>Café expresso:</strong> 300 - 600 XOF</li>
+                      <li><strong>Viagem de táxi curta:</strong> 1.000 - 2.000 XOF</li>
+                    </ul>
+                </div>
+              );
+            case 'salary':
+              return (
+                <div className="animate-fade-in-content">
+                    <h3 className="text-xl font-bold text-gray-800 mb-3">Salário e Custo de Vida</h3>
+                    <p className="text-gray-600">Para contextualizar os valores, o salário mínimo na Guiné-Bissau ronda os <strong>50.000 XOF mensais</strong>. No entanto, os salários variam significativamente com a profissão e o setor. Este valor ajuda a compreender a escala dos preços apresentados.</p>
+                </div>
+              );
+            case 'chart':
+              return (
+                <div className="animate-fade-in-content">
+                  <h3 className="text-xl font-bold text-gray-800 mb-2">Cotação em Tempo Real (XOF/USD)</h3>
+                  <div ref={chartContainerRef} className="tradingview-widget-container h-[250px]"></div>
+                </div>
+              );
+            default: return null;
+          }
+        }
+
+        return (
+          <div
+            className={`fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4 ${backdropAnimation}`}
+            onClick={onClose}
+          >
+            <div
+              className={`bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto flex flex-col md:flex-row ${modalAnimation}`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="md:w-1/2 w-full h-64 md:h-auto overflow-hidden md:rounded-l-xl rounded-t-xl md:rounded-tr-none">
+                <img src={topic.imageUrl.replace('/600/400', '/800/600')} alt={topic.title} className="w-full h-full object-cover animate-image-reveal"/>
+              </div>
+              <div className="md:w-1/2 w-full p-8 relative flex flex-col">
+                <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-800 transition-colors z-10" aria-label="Fechar modal">
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+                <div className="flex-grow flex flex-col">
+                  <div className="animate-content-in" style={{ '--delay': '150ms' }}><h2 className="text-4xl font-extrabold text-gray-900 mb-2">{topic.title}</h2></div>
+                  <div className="animate-content-in" style={{ '--delay': '250ms' }}><span className="mb-4 bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full self-start inline-block">{topic.category}</span></div>
+                  {topic.id === 'currency' ? (
+                    <div className="flex-grow flex flex-col">
+                      <div className="border-b border-gray-200 animate-content-in" style={{ '--delay': '350ms' }}>
+                        <nav className="-mb-px flex space-x-4 overflow-x-auto" aria-label="Tabs">
+                          {tabs.map(tab => (
+                            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`whitespace-nowrap py-3 px-2 border-b-2 font-semibold text-sm transition-colors duration-200 focus:outline-none ${activeTab === tab.id ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>
+                              {tab.label}
+                            </button>
+                          ))}
+                        </nav>
+                      </div>
+                      <div className="pt-6 flex-grow">{renderTabContent()}</div>
+                    </div>
+                  ) : (
+                    <div className="prose max-w-none text-gray-700 animate-content-in" style={{ '--delay': '350ms' }}>
+                      <p className="text-lg leading-relaxed">{topic.longDescription}</p>
+                    </div>
+                  )}
+                </div>
+                <div className="mt-auto pt-6 animate-content-in" style={{ '--delay': '450ms' }}>
+                  <button onClick={onClose} className="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50">Fechar</button>
+                </div>
+              </div>
+            </div>
+            <style>{`
+              @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+              @keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
+              @keyframes scale-up { from { transform: scale(0.95) translateY(10px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+              @keyframes scale-down { from { transform: scale(1); opacity: 1; } to { transform: scale(0.95); opacity: 0; } }
+              @keyframes content-in { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+              @keyframes fade-in-content { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+              @keyframes image-reveal { from { transform: scale(1.1); clip-path: inset(0 50% 0 50%); opacity: 0; } to { transform: scale(1); clip-path: inset(0 0 0 0); opacity: 1; } }
+              .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+              .animate-fade-out { animation: fade-out 0.3s ease-in forwards; }
+              .animate-scale-up { animation: scale-up 0.4s cubic-bezier(0.165, 0.840, 0.440, 1.000) forwards; }
+              .animate-scale-down { animation: scale-down 0.3s ease-in forwards; }
+              .animate-content-in { animation: content-in 0.5s cubic-bezier(0.165, 0.840, 0.440, 1.000) forwards; animation-delay: var(--delay); opacity: 0; }
+              .animate-fade-in-content { animation: fade-in-content 0.4s ease-out forwards; }
+              .animate-image-reveal { animation: image-reveal 0.8s cubic-bezier(0.25, 1, 0.5, 1) 0.2s forwards; }
+              input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+              input[type=number] { -moz-appearance: textfield; }
+            `}</style>
+          </div>
+        );
+      };
+
+      // --- App.tsx ---
+      const App = () => {
+        const topicsData = [
+          { id: 'currency', title: 'Moeda: Franco CFA', shortDescription: 'A moeda oficial da Guiné-Bissau.', longDescription: 'O Franco CFA da África Ocidental (XOF) é a moeda oficial da Guiné-Bissau. É partilhado por vários outros países da região, facilitando o comércio e a estabilidade económica. As notas e moedas apresentam símbolos que refletem a rica cultura e história da África Ocidental.', imageUrl: 'https://i.ibb.co/BHS0MTQ6/download.jpg', category: 'Economia', },
+          { id: 'culture', title: 'Cultura Vibrante', shortDescription: 'Música, dança e tradições ricas.', longDescription: 'A cultura da Guiné-Bissau é um mosaico de etnias, cada uma com as suas tradições únicas. A música é central, com o Gumbé sendo o género musical nacional. O Carnaval de Bissau é um dos eventos mais espetaculares, uma explosão de cores, música e dança que celebra a diversidade do país.', imageUrl: 'https://picsum.photos/seed/culture/600/400', category: 'Cultura', },
+          { id: 'cuisine', title: 'Sabores da Terra', shortDescription: 'Descubra a culinária local.', longDescription: 'A gastronomia guineense é rica e saborosa, baseada em produtos locais. O prato mais famoso é o "Caldo de Mancarra", um delicioso guisado de amendoim que pode ser feito com peixe ou carne. O peixe fresco, o arroz e o óleo de palma são ingredientes fundamentais na maioria dos pratos.', imageUrl: 'https://i.ibb.co/jxjrnN7/download.jpg', category: 'Gastronomia', },
+          { id: 'nature', title: 'Paraíso Natural', shortDescription: 'O Arquipélago dos Bijagós.', longDescription: 'A Guiné-Bissau é um tesouro de biodiversidade, com destaque para o Arquipélago dos Bijagós, uma Reserva da Biosfera da UNESCO. Composto por 88 ilhas e ilhéus, é o lar de hipopótamos de água salgada, tartarugas marinhas raras e uma cultura matriarcal única. Um destino imperdível para o ecoturismo.', imageUrl: 'https://picsum.photos/seed/nature/600/400', category: 'Natureza', },
+          { id: 'history', title: 'Herança e Luta', shortDescription: 'A jornada para a independência.', longDescription: 'A história da Guiné-Bissau é marcada pela luta pela independência de Portugal, liderada pelo herói nacional Amílcar Cabral. A independência foi declarada unilateralmente em 1973 e reconhecida em 1974. Esta herança de resiliência e luta pela liberdade é uma parte fundamental da identidade nacional.', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Flag_of_Guinea-Bissau.svg/1024px-Flag_of_Guinea-Bissau.svg.png', category: 'História', },
+          { id: 'bissau-map', title: 'Bissau: Mapa 3D', shortDescription: 'Explore a capital da Guiné-Bissau em 3D.', longDescription: 'Bissau, a capital da Guiné-Bissau, é o coração pulsante do país. Como a maior cidade, principal porto e centro administrativo e militar, Bissau é vital para a nação. A sua área portuária, conhecida como Porto Pidjiguiti, é um marco histórico da luta pela independência. Explore Bissau Velho, o centro histórico da cidade, com a sua arquitetura colonial e ruas charmosas. Este mapa interativo permite-lhe descobrir os cantos e a geografia desta cidade vibrante.', imageUrl: 'https://i.postimg.cc/p5fmyfcv/download.jpg', category: 'Geografia', },
+          { id: 'architecture', title: 'Arquitetura Colonial', shortDescription: 'Marcas de um passado histórico.', longDescription: 'A arquitetura da Guiné-Bissau, especialmente em Bissau Velho, é um testemunho vivo do seu passado colonial português. Edifícios com varandas de ferro forjado e fachadas coloridas, embora muitos necessitem de restauro, contam histórias de uma era passada e conferem um charme único à capital.', imageUrl: 'https://i.ibb.co/FkjVzfLn/3918cd85-1f5c-4042-981b-655719fb08c3.webp', category: 'História', },
+        ];
+
+        const [showWelcome, setShowWelcome] = useState(true);
+        const [selectedTopic, setSelectedTopic] = useState(null);
+        const [isModalClosing, setIsModalClosing] = useState(false);
+
+        const handleStart = () => setShowWelcome(false);
+        const handleCardClick = (topic) => { setSelectedTopic(topic); setIsModalClosing(false); };
+        const handleCloseModal = () => {
+          setIsModalClosing(true);
+          setTimeout(() => { setSelectedTopic(null); setIsModalClosing(false); }, 300);
+        };
+
+        if (showWelcome) {
+          return <WelcomeScreen onStart={handleStart} />;
+        }
+
+        return (
+          <div className="min-h-screen bg-gray-50 text-gray-800 animate-app-fade-in">
+            <header className="bg-white shadow-md animate-fade-in-down">
+              <div className="container mx-auto px-6 py-4">
+                <div className="flex items-center space-x-4">
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Flag_of_Guinea-Bissau.svg/1024px-Flag_of_Guinea-Bissau.svg.png" alt="Bandeira da Guiné-Bissau" className="h-12 w-auto rounded-md shadow-sm" />
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-900">Explorar Guiné-Bissau</h1>
+                    <p className="text-md text-gray-600">Uma janela para a pérola da África Ocidental</p>
+                  </div>
+                </div>
+              </div>
+            </header>
+
+            <main className="container mx-auto px-6 py-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                {topicsData.map((topic, index) => (
+                  <TopicCard key={topic.id} topic={topic} onClick={() => handleCardClick(topic)} animationDelay={`${index * 100}ms`} />
+                ))}
+              </div>
+            </main>
+
+            <footer className="text-center py-6 mt-8 text-gray-500 text-sm">
+              <p>Criado com paixão para mostrar as maravilhas da Guiné-Bissau.</p>
+            </footer>
+
+            {selectedTopic && <TopicModal topic={selectedTopic} onClose={handleCloseModal} isClosing={isModalClosing} />}
+
+            <style>{`
+              @keyframes app-fade-in { from { opacity: 0; } to { opacity: 1; } }
+              .animate-app-fade-in { animation: app-fade-in 0.8s ease-out forwards; }
+              @keyframes fade-in-down { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+              .animate-fade-in-down { animation: fade-in-down 0.6s cubic-bezier(0.390, 0.575, 0.565, 1.000) forwards; }
+              @keyframes card-enter { from { opacity: 0; transform: translateY(30px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+              .animate-card-enter { animation: card-enter 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; opacity: 0; }
+            `}</style>
+          </div>
+        );
+      };
+
+      // --- RENDER THE APP ---
+      const rootElement = document.getElementById('root');
+      const root = ReactDOM.createRoot(rootElement);
+      root.render(
+        <React.StrictMode>
+          <App />
+        </React.StrictMode>
+      );
+    </script>
+  </body>
+</html>
